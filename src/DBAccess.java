@@ -59,4 +59,25 @@ public class DBAccess {
         return dbtime;
     }
     
+    public ResultSet read_db(String s){
+        ResultSet rs = null;
+        try {
+            Statement stmt =  dbconnection.createStatement();
+            rs = stmt.executeQuery(s);
+        } catch (SQLException e) {
+            
+        }
+        return rs;
+    }
+    
+    public boolean write_db(String s){
+        try {
+            Statement stmt =  dbconnection.createStatement();
+            stmt.executeUpdate(s);
+        } catch (SQLException e) {
+            return false;
+        }
+        return true;
+    }
+    
 }
