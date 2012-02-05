@@ -5,8 +5,10 @@
 
 /**
  *
- * @author toni
+ * @author katja
  */
+import java.sql.*;
+
 public class Account {
     
     int user_id;
@@ -17,6 +19,7 @@ public class Account {
     String last_name;
     
     DBAccess dba;
+    Connection con;
             
     public Account() {
         user_id = -1;
@@ -27,17 +30,44 @@ public class Account {
         last_name = "";
         
         dba = new DBAccess();
-        dba.connectDB();
     }
     
     public void loadUserById(int id) {
-        user_id = id;
-        //here we query for user from DB
-        dba.read_db(String.format("select * from employeeData where id = %d;",user_id));
+        ResultSet rs = null;        
+        try {
+            rs = dba.read_db(String.format(
+                "select employeeData.id, employeeData.first_name, "
+                + "employeeData.last_name, user.username from employeeData, user "
+                + "where employeeData.id=user.employee_id=%d;",id));
+            
+            while(rs.next()){
+               user_id = rs.getInt("id");
+               first_name = rs.getString("first_name");
+               last_name = rs.getString("last_name");
+               username = rs.getString("username");
+            }
+        }catch(SQLException e){
+            
+        }
     }
     
     public void loadUserByUname(String u) {
-        //here we query for user from DB
+
+        try {            
+            ResultSet rs = dba.read_db(String.format(
+                "select employeeData.id, employeeData.first_name, employeeData.last_name, "
+                + "user.username from employeeData, user "
+                + "where user.username=\'%s\' and employeeData.id=user.employee_id;",u));
+            
+            while(rs.next()){
+               user_id = rs.getInt("id");
+               first_name = rs.getString("first_name");
+               last_name = rs.getString("last_name");
+               username = rs.getString("username");
+            }
+        }catch(SQLException e){
+            
+        }
     }
     
     public void setUsername(String u) {
@@ -45,8 +75,33 @@ public class Account {
         //here we query username from DB
     }
     
+    public String getUsername() {
+        return username;
+    }
+    
+    public void setFirstName(String f) {
+        first_name = f;
+    }
+    
+    public String getFirstName() {
+        return first_name;
+    }
+    
+    public void setLastName(String l) {
+        last_name = l;
+    }
+    
+    public String getLastName() {
+        return last_name;
+    }
+    
     public void setUserId(int id) {
         id = user_id;
         //here we query id from DB        
     }
+    
+    public int getUserId() {
+        return user_id;
+    }
+
 }

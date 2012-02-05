@@ -14,13 +14,14 @@ import java.util.Properties;
 
 public class DBAccess {
      
-    String dbUrl = null;
-    String dbuser = null;
-    String dbpass = null;
+    private String dbUrl = null;
+    private String dbuser = null;
+    private String dbpass = null;
     
-    Connection dbconnection = null;
-
-    public void connectDB(){
+    private Connection dbconnection;
+    private Statement stmt;
+    
+    public DBAccess(){
         
         Properties prop = new Properties();
         
@@ -34,53 +35,66 @@ public class DBAccess {
     		dbpass = prop.getProperty("dbpass");
  
     	} catch (IOException ex) {
-    		ex.printStackTrace();
         }
         
         try {
             dbconnection = DriverManager.getConnection( dbUrl, dbuser, dbpass );
+            stmt = dbconnection.createStatement();
         } catch (SQLException e) {
-            
+            System.err.println ("Error message: " + e.getMessage ());
+            System.err.println ("Error number: " + e.getErrorCode ());
         }
-        
+                
     }
     
     public String testConn() throws SQLException{
         String dbtime = null;
-        Statement stmt = null;
         try {
-            stmt =  dbconnection.createStatement();
             ResultSet rs = stmt.executeQuery("select now()");
             while (rs.next()){
                 dbtime=rs.getString(1);
             }
         } catch (SQLException e) {
-            
-        } finally {
-            if (stmt != null) { stmt.close(); }
+            System.err.println ("Error message: " + e.getMessage ());
+            System.err.println ("Error number: " + e.getErrorCode ());
         }
         return dbtime;
     }
     
-    public ResultSet read_db(String s){
+    public ResultSet read_db(String s) throws SQLException{
         ResultSet rs = null;
         try {
-            Statement stmt =  dbconnection.createStatement();
             rs = stmt.executeQuery(s);
-        } catch (SQLException e) {
-            
+        }catch (SQLException e) {
+            System.err.println ("Error message: " + e.getMessage ());
+            System.err.println ("Error number: " + e.getErrorCode ());
         }
+        
         return rs;
+        
     }
     
-    public boolean write_db(String s){
+    public boolean write_db(String s) throws SQLException{
         try {
-            Statement stmt =  dbconnection.createStatement();
             stmt.executeUpdate(s);
         } catch (SQLException e) {
-            return false;
+            System.err.println ("Error message: " + e.getMessage ());
+            System.err.println ("Error number: " + e.getErrorCode ());
         }
+        
         return true;
     }
     
+    /** 
+    * release connection 
+    **/
+    public void close() {
+        if (dbconnection==null) return;
+        try {
+            dbconnection.close();
+        } catch(SQLException e){
+            System.err.println ("Error message: " + e.getMessage ());
+            System.err.println ("Error number: " + e.getErrorCode ());
+        }
+    }
 }
