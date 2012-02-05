@@ -20,7 +20,7 @@ public class DBAccess {
     
     Connection dbconnection = null;
 
-    public void ConnectDB(){
+    public void connectDB(){
         
         Properties prop = new Properties();
         
@@ -45,16 +45,19 @@ public class DBAccess {
         
     }
     
-    public String testConn(){
+    public String testConn() throws SQLException{
         String dbtime = null;
+        Statement stmt = null;
         try {
-            Statement stmt =  dbconnection.createStatement();
+            stmt =  dbconnection.createStatement();
             ResultSet rs = stmt.executeQuery("select now()");
             while (rs.next()){
                 dbtime=rs.getString(1);
             }
         } catch (SQLException e) {
             
+        } finally {
+            if (stmt != null) { stmt.close(); }
         }
         return dbtime;
     }

@@ -16,7 +16,7 @@ public class TimeTrackDebugger {
         // TODO code application logic here
         DBAccess dba =  new DBAccess();
         
-        dba.ConnectDB();
+        dba.connectDB();
         
         System.out.println(dba.testConn());
     }
