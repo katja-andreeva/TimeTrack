@@ -80,6 +80,7 @@ public class DBAccess {
         } catch (SQLException e) {
             System.err.println ("Error message: " + e.getMessage ());
             System.err.println ("Error number: " + e.getErrorCode ());
+            return false;
         }
         
         return true;

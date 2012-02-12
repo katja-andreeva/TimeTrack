@@ -29,7 +29,13 @@ public class TimeTrackDebugger {
         
         Account a = new Account();
         
-        a.loadUserById(1);
-        System.out.println(a.getFirstName()+" "+a.getLastName()+", ID: "+a.getUserId());
+        a.setUserId(1);
+        if (a.loadUser()){
+            System.out.println(a.getFirstName()+" "+a.getLastName()
+                    +", ID: "+a.getUserId()+", Username: "+a.getUsername());
+        }else {
+            System.out.println("failed");
+        }
+        System.out.println(a.generateUname());
     }
 }
