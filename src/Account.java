@@ -7,7 +7,11 @@
  *
  * @author katja
  */
+import java.io.UnsupportedEncodingException;
+import java.security.NoSuchAlgorithmException;
 import java.sql.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Account {
     
@@ -21,7 +25,7 @@ public class Account {
     String address;
     String phone;
     String startdate;
-    String acctype;
+    int acctype;
     
     DBAccess dba;
     InputValidator iv;
@@ -33,18 +37,43 @@ public class Account {
         
         firstname = "";
         lastname = "";
+        title = "";
+        address = "";
+        phone = "";
+        startdate = "";
+        acctype = -1;
         
         
         dba = new DBAccess();
         iv = new InputValidator();
     }
     
-    public Account(int uid, String uname, String pw, String fname, String lname) {
+    public Account(int uid, String uname, String pw, String fname, String lname,
+            String t, String addr, String p, String start, int atype) {
         user_id = uid;
         username = uname;
         password = pw;
         firstname = fname;
         lastname = lname;
+        title = t;
+        address = addr;
+        phone = p;
+        startdate = start;
+        acctype = atype;
+        
+        dba = new DBAccess();
+    }
+    
+    public Account(String pw, String fname, String lname,
+            String t, String addr, String p, String start, int atype) {
+        password = pw;
+        firstname = fname;
+        lastname = lname;
+        title = t;
+        address = addr;
+        phone = p;
+        startdate = start;
+        acctype = atype;
         
         dba = new DBAccess();
     }
@@ -65,7 +94,10 @@ public class Account {
         try {
             ResultSet rs = dba.read_db(String.format(
                 "select employeeData.id, employeeData.first_name, "
-                + "employeeData.last_name, user.username from employeeData, user "
+                + "employeeData.last_name, employeeData.title, "
+                + "employeeData.address, employeeData.phone, "
+                + "employeeData.start_date, employeeData.account_type, "
+                + "user.username from employeeData, user "
                 + "where employeeData.id=%d and user.employee_id=%d;",id, id));
             
             while(rs.next()){
@@ -74,6 +106,11 @@ public class Account {
                firstname = rs.getString("first_name");
                lastname = rs.getString("last_name");
                username = rs.getString("username");
+               title = rs.getString("title");
+               address = rs.getString("address");
+               phone = rs.getString("phone");
+               startdate = rs.getString("start_date");
+               acctype = rs.getInt("account_type");
             }
         }catch(SQLException e){
             success = false;
@@ -88,6 +125,8 @@ public class Account {
         try {            
             ResultSet rs = dba.read_db(String.format(
                 "select employeeData.id, employeeData.first_name, employeeData.last_name, "
+                + "employeeData.title, employeeData.address, employeeData.phone, "
+                + "employeeData.start_date, employeeData.account_type, "
                 + "user.username from employeeData, user "
                 + "where user.username=\'%s\' and employeeData.id=user.employee_id;",u));
             
@@ -97,6 +136,11 @@ public class Account {
                 firstname = rs.getString("first_name");
                 lastname = rs.getString("last_name");
                 username = rs.getString("username");
+                title = rs.getString("title");
+                address = rs.getString("address");
+                phone = rs.getString("phone");
+                startdate = rs.getString("start_date");
+                acctype = rs.getInt("account_type");
             }
         }catch(SQLException e){
             success = false;
@@ -158,15 +202,6 @@ public class Account {
         return lastname;
     }
     
-    public void setAddress(String a) {
-        if(iv.validateString(a))
-            address = a;
-    }
-    
-    public String getAddress() {
-        return address;
-    }
-    
     public void setTitle(String t) {
         if(iv.validateString(t))
             title = t;
@@ -176,18 +211,70 @@ public class Account {
         return title;
     }
     
+    public void setAddress(String a) {
+        if(iv.validateString(a))
+            address = a;
+    }
+    
+    public String getAddress() {
+        return address;
+    }
+    
+    public void setPhone(String p) {
+        if(iv.validateString(p))
+            phone = p;
+    }
+    
+    public String getPhone() {
+        return phone;
+    }
+    
+    public void setStartDate(String d) {
+        startdate = d;
+    } 
+    
+    public String getStartDate() {
+        return startdate;
+    }
+    
+    public void setAccountType(int t) {
+        acctype = t;
+    }
+    
+    public int getAccountType() {
+        return acctype;
+    }
+    
     public boolean addUser() {
         user_id = generateId();
         username = generateUname();
         boolean writeok = false;
+        String[] hs = null;
         
+        Authentication a = new Authentication();
         try {
-           writeok = dba.write_db(String.format(
-                   "INSERT INTO employeeData(first_name, last_name, title, "
+            hs = a.createHashSalt(password);
+        } catch (NoSuchAlgorithmException ex) {
+            Logger.getLogger(Account.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (UnsupportedEncodingException ex) {
+            Logger.getLogger(Account.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        try {
+            if(dba.write_db(String.format(
+                   "INSERT INTO employeeData(id, first_name, last_name, title, "
                    + "address, phone, start_date, account_type) "
-                   + "VALUES('%s', '%s', '%s', '%s', "
+                   + "VALUES('%d', '%s', '%s', '%s', '%s', "
                    + "'%s', '%s', '1');"
-                   ,firstname,lastname,"title","address","phone","2001-01-01"));
+                   ,user_id,firstname,lastname,title,address,phone,startdate))) {
+               
+                writeok = dba.write_db(String.format(
+                   "INSERT INTO user(username, employee_id, pass_hash, salt) "
+                   + "VALUES('%s', '%s', '%s', '%s');"
+                   ,username,user_id,hs[0],hs[1]));
+
+            } else {
+                writeok = false;
+            }
         }catch(SQLException e){
             return writeok;
         }
@@ -199,7 +286,7 @@ public class Account {
         return false;
     }
     
-    public int generateId() {
+    private int generateId() {
         int id = -1;
         
         try {            
@@ -214,7 +301,7 @@ public class Account {
         return id;
     }
     
-    public String generateUname(){
+    private String generateUname(){
         String uname = "";
         String first = firstname.toLowerCase();
         String last = lastname.toLowerCase();

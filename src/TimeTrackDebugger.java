@@ -27,15 +27,13 @@ public class TimeTrackDebugger {
             Logger.getLogger(TimeTrackDebugger.class.getName()).log(Level.SEVERE, null, ex);
         }
         
-        Account a = new Account();
+        //Account a = new Account();
         
-        a.setUserId(1);
-        if (a.loadUser()){
-            System.out.println(a.getFirstName()+" "+a.getLastName()
-                    +", ID: "+a.getUserId()+", Username: "+a.getUsername());
+        /*Account a = new Account("seppo123","toni","lampela","CEO","jokutie 2, helsinki","044124567","2011-06-06",1);
+        if(a.addUser()){
+            System.out.println("user added");
         }else {
-            System.out.println("failed");
-        }
-        System.out.println(a.generateUname());
+            System.out.println("user add failed");
+        }*/
     }
 }
