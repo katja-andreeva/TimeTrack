@@ -39,7 +39,7 @@ public class Authentication {
            }
  
            ResultSet rs = dba.read_db(String.format(
-                   "SELECT PASSWORD, SALT FROM CREDENTIAL WHERE LOGIN '%s'",login));
+                   "select pass_hash, salt from user where username=\'%s\';",login));
            String digest, salt;
            if (rs.next()) {
                digest = rs.getString("pass_hash");

@@ -1,4 +1,5 @@
 
+import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -35,5 +36,19 @@ public class TimeTrackDebugger {
         }else {
             System.out.println("user add failed");
         }*/
+        
+        Authentication a = new Authentication();
+        try {
+            if(a.authenticate(dba, "lampela0", "seppo123")){
+                System.out.println("User authenticated");
+                
+            }else {
+                System.out.println("Invalid credentials");
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(TimeTrackDebugger.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (NoSuchAlgorithmException ex) {
+            Logger.getLogger(TimeTrackDebugger.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 }

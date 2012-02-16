@@ -25,12 +25,13 @@ public class Account {
     String address;
     String phone;
     String startdate;
+    double payrate;
     int acctype;
     
     DBAccess dba;
     InputValidator iv;
             
-    public Account() {
+    public Account(DBAccess d) {
         user_id = -1;
         username = "";
         password = "";
@@ -41,38 +42,43 @@ public class Account {
         address = "";
         phone = "";
         startdate = "";
+        payrate = 0;
         acctype = -1;
         
         
-        dba = new DBAccess();
+        dba = d;
         iv = new InputValidator();
     }
     
     public Account(int uid, String uname, String pw, String fname, String lname,
-            String t, String addr, String p, String start, int atype) {
+            String t, String addr, String p, String start, double r, int atype) {
         user_id = uid;
         username = uname;
         password = pw;
+        
         firstname = fname;
         lastname = lname;
         title = t;
         address = addr;
         phone = p;
         startdate = start;
+        payrate = r;
         acctype = atype;
         
         dba = new DBAccess();
     }
     
     public Account(String pw, String fname, String lname,
-            String t, String addr, String p, String start, int atype) {
+            String t, String addr, String p, String start, double r, int atype) {
         password = pw;
+        
         firstname = fname;
         lastname = lname;
         title = t;
         address = addr;
         phone = p;
         startdate = start;
+        payrate = r;
         acctype = atype;
         
         dba = new DBAccess();
@@ -97,8 +103,9 @@ public class Account {
                 + "employeeData.last_name, employeeData.title, "
                 + "employeeData.address, employeeData.phone, "
                 + "employeeData.start_date, employeeData.account_type, "
-                + "user.username from employeeData, user "
-                + "where employeeData.id=%d and user.employee_id=%d;",id, id));
+                + "user.username, salary.rate from employeeData, user, salary "
+                + "where employeeData.id=%d and user.employee_id=%d "
+                + "and salary.employee_id=%d;",id, id, id));
             
             while(rs.next()){
                success = true;
@@ -111,6 +118,7 @@ public class Account {
                phone = rs.getString("phone");
                startdate = rs.getString("start_date");
                acctype = rs.getInt("account_type");
+               payrate = rs.getDouble("rate");
             }
         }catch(SQLException e){
             success = false;
@@ -127,8 +135,9 @@ public class Account {
                 "select employeeData.id, employeeData.first_name, employeeData.last_name, "
                 + "employeeData.title, employeeData.address, employeeData.phone, "
                 + "employeeData.start_date, employeeData.account_type, "
-                + "user.username from employeeData, user "
-                + "where user.username=\'%s\' and employeeData.id=user.employee_id;",u));
+                + "user.username, salary.rate from employeeData, user, salary"
+                + "where user.username=\'%s\' and employeeData.id=user.employee_id "
+                + "and salary.employee_id=user.employee_id;",u));
             
             while(rs.next()){
                 success = true;
@@ -141,6 +150,7 @@ public class Account {
                 phone = rs.getString("phone");
                 startdate = rs.getString("start_date");
                 acctype = rs.getInt("account_type");
+                payrate = rs.getDouble("rate");
             }
         }catch(SQLException e){
             success = false;
@@ -237,6 +247,14 @@ public class Account {
         return startdate;
     }
     
+    public void setRate(double r) {
+        payrate = r;
+    }
+    
+    public double getRate(){
+        return payrate;
+    }
+    
     public void setAccountType(int t) {
         acctype = t;
     }
@@ -267,10 +285,13 @@ public class Account {
                    + "'%s', '%s', '1');"
                    ,user_id,firstname,lastname,title,address,phone,startdate))) {
                
-                writeok = dba.write_db(String.format(
+                if(dba.write_db(String.format(
                    "INSERT INTO user(username, employee_id, pass_hash, salt) "
                    + "VALUES('%s', '%s', '%s', '%s');"
-                   ,username,user_id,hs[0],hs[1]));
+                   ,username,user_id,hs[0],hs[1]))){
+                    writeok = dba.write_db(String.format("INSERT INTO "
+                            + "salary(employee_id,rate) VALUES('%d','%f');",user_id,payrate));
+                }
 
             } else {
                 writeok = false;
@@ -282,8 +303,20 @@ public class Account {
     }
     
     public boolean modUser() {
-        
-        return false;
+        boolean writeok = false;
+        try {
+            if(dba.write_db(String.format(
+                   "UPDATE employeeData first_name='%d', last_name='%s', title='%s', "
+                   + "address='%s', phone='%s', start_date='%s', account_type='%s' "
+                   + "where id=\'%d\';"
+                   ,firstname,lastname,title,address,phone,startdate,user_id))){
+                dba.write_db(String.format("UPDATE salary rate='%f' "
+                        + "where id=\'%d\';",payrate));
+            }
+        }catch(SQLException e){
+            return writeok;
+        }
+        return writeok;
     }
     
     private int generateId() {
