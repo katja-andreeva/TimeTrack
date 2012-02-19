@@ -308,7 +308,7 @@ public class Account {
             if(dba.write_db(String.format(
                    "UPDATE employeeData first_name='%d', last_name='%s', title='%s', "
                    + "address='%s', phone='%s', start_date='%s', account_type='%s' "
-                   + "where id=\'%d\';"
+                   + "where id='%d';"
                    ,firstname,lastname,title,address,phone,startdate,user_id))){
                 dba.write_db(String.format("UPDATE salary rate='%f' "
                         + "where id=\'%d\';",payrate));

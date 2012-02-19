@@ -7,15 +7,16 @@
  * Borrowed functionality from https://www.owasp.org/index.php/Hashing_Java
  * @author katja
  */
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Arrays;
 import sun.misc.BASE64Decoder;
 import sun.misc.BASE64Encoder;
-import java.sql.*;
-import java.util.Arrays;
-import java.security.SecureRandom;
 
 public class Authentication {
     

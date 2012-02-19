@@ -7,8 +7,7 @@
  *
  * @author katja
  */
-import java.sql.SQLException;
-import java.util.*;
+import java.sql.*;
         
 public class TimeData {
     
@@ -16,17 +15,16 @@ public class TimeData {
     private String dt;
     private double hours;
     private double coeff;
-        
-    public TimeData(int u){
-        user_id = u;
-        
-    }
+    private DBAccess dba;
+    private double rate;
     
-    public TimeData(int u, String d, double h, double c) {
-        user_id = u;
-        dt = d;
-        hours = h;
-        coeff = c;
+    public TimeData(DBAccess d) {
+        user_id = -1;
+        dt = "";
+        hours = 0;
+        coeff = 0;
+        rate = 0;
+        dba = d;
     }
     
     public void setDate(String d){
@@ -53,18 +51,34 @@ public class TimeData {
         coeff = c;
     }
     
-    public void saveTimeData(DBAccess d) throws SQLException{
-        
-        DBAccess dba = d;
-        double rate = 0;
+    public double getRate(){
+        return rate;
+    }
+    
+    public void saveTimeData(int uid) throws SQLException{
+        user_id = uid;
+        ResultSet rs = dba.read_db(String.format("SELECT rate from salary "
+                + "where employee_id='%d');", user_id));
+        while(rs.next()){
+               rate = rs.getDouble("rate");
+        }
         dba.write_db(String.format("INSERT INTO "
-                + "timeUnit(employee_id,coeff,rate) VALUES('%d','%f','%f');"
-                ,user_id,coeff,rate));
+                + "timeUnit(employee_id,coeff,hours, date, rate) "
+                + "VALUES('%d','%f','%f');"
+                ,user_id, coeff, hours, dt, rate));
         
         
     }
     
-    public void loadTimeData(DBAccess d){
-        
+    public void loadTimeData(int uid, String d) throws SQLException{
+        user_id = uid;
+        dt = d;
+        ResultSet rs = dba.read_db(String.format("SELECT coeff, hours, rate "
+                + "where employee_id='%d' and date='%s';",user_id, dt));
+        while(rs.next()){
+            coeff = rs.getDouble("coeff");
+            hours = rs.getDouble("hours");
+            rate = rs.getDouble("rate");
+        }
     }
 }
