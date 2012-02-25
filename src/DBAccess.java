@@ -74,6 +74,10 @@ public class DBAccess {
         
     }
     
+    public Connection getConnection(){
+        return dbconnection;
+    }
+    
     public boolean write_db(String s) throws SQLException{
         try {
             stmt.executeUpdate(s);

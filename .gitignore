@@ -5,3 +5,7 @@ database.properties
 nbproject/private/private.properties
 
 nbproject/private/private.properties
+
+src/.DS_Store
+
+.DS_Store

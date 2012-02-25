@@ -12,8 +12,7 @@ import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.Arrays;
 import sun.misc.BASE64Decoder;
 import sun.misc.BASE64Encoder;
@@ -21,6 +20,7 @@ import sun.misc.BASE64Encoder;
 public class Authentication {
     
     private final static int ITERATION_NUMBER = 1000;
+    Connection con;
     
     public Authentication() {
         
@@ -38,9 +38,12 @@ public class Authentication {
                login="";
                password="";
            }
- 
-           ResultSet rs = dba.read_db(String.format(
-                   "select pass_hash, salt from user where username=\'%s\';",login));
+           con = dba.getConnection();
+           PreparedStatement ps = con.prepareStatement("select pass_hash, "
+                   + "salt from user where username = ?");
+           ps.setString(1,login);
+           ResultSet rs = ps.executeQuery();
+           
            String digest, salt;
            if (rs.next()) {
                digest = rs.getString("pass_hash");

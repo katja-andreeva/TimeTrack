@@ -15,21 +15,22 @@ import java.util.logging.Logger;
 
 public class Account {
     
-    int user_id;
-    String username;
-    String password;
+    private int user_id;
+    private String username;
+    private String password;
     
-    String firstname;
-    String lastname;
-    String title;
-    String address;
-    String phone;
-    String startdate;
-    double payrate;
-    int acctype;
+    private String firstname;
+    private String lastname;
+    private String title;
+    private String address;
+    private String phone;
+    private String startdate;
+    private double payrate;
+    private int acctype;
     
-    DBAccess dba;
-    InputValidator iv;
+    private DBAccess dba;
+    private Connection con;
+    private InputValidator iv;
             
     public Account(DBAccess d) {
         user_id = -1;
@@ -48,6 +49,7 @@ public class Account {
         
         dba = d;
         iv = new InputValidator();
+        con = dba.getConnection();
     }
     
     public Account(int uid, String uname, String pw, String fname, String lname,
@@ -66,6 +68,7 @@ public class Account {
         acctype = atype;
         
         dba = new DBAccess();
+        con = dba.getConnection();
     }
     
     public Account(String pw, String fname, String lname,
@@ -82,6 +85,7 @@ public class Account {
         acctype = atype;
         
         dba = new DBAccess();
+        con = dba.getConnection();
     }
     
     public boolean loadUser() {
@@ -89,7 +93,8 @@ public class Account {
            return loadUserById(user_id);
         }
         else if (iv.validateString(username)) {
-           return loadUserByUname(username);
+           System.out.println("loaded user");
+            return loadUserByUname(username);
         }
         else
             return false;
@@ -98,14 +103,26 @@ public class Account {
         
         boolean success = false;
         try {
-            ResultSet rs = dba.read_db(String.format(
+            /*ResultSet rs = dba.read_db(String.format(
                 "select employeeData.id, employeeData.first_name, "
                 + "employeeData.last_name, employeeData.title, "
                 + "employeeData.address, employeeData.phone, "
                 + "employeeData.start_date, employeeData.account_type, "
                 + "user.username, salary.rate from employeeData, user, salary "
                 + "where employeeData.id=%d and user.employee_id=%d "
-                + "and salary.employee_id=%d;",id, id, id));
+                + "and salary.employee_id=%d;",id, id, id));*/
+            PreparedStatement ps = con.prepareStatement("select employeeData.id, "
+                    + "employeeData.first_name, "
+                + "employeeData.last_name, employeeData.title, "
+                + "employeeData.address, employeeData.phone, "
+                + "employeeData.start_date, employeeData.account_type, "
+                + "user.username, salary.rate from employeeData, user, salary "
+                + "where employeeData.id = ? and user.employee_id = ? "
+                + "and salary.employee_id = ?;");
+            ps.setInt(1, id);
+            ps.setInt(2, id);
+            ps.setInt(3, id);
+            ResultSet rs = ps.executeQuery();
             
             while(rs.next()){
                success = true;
@@ -131,13 +148,23 @@ public class Account {
         
         boolean success = false;
         try {            
-            ResultSet rs = dba.read_db(String.format(
+            /*ResultSet rs = dba.read_db(String.format(
                 "select employeeData.id, employeeData.first_name, employeeData.last_name, "
                 + "employeeData.title, employeeData.address, employeeData.phone, "
                 + "employeeData.start_date, employeeData.account_type, "
                 + "user.username, salary.rate from employeeData, user, salary"
                 + "where user.username=\'%s\' and employeeData.id=user.employee_id "
-                + "and salary.employee_id=user.employee_id;",u));
+                + "and salary.employee_id=user.employee_id;",u));*/
+            
+            PreparedStatement ps = con.prepareStatement("select employeeData.id, "
+                    + "employeeData.first_name, employeeData.last_name, "
+                + "employeeData.title, employeeData.address, employeeData.phone, "
+                + "employeeData.start_date, employeeData.account_type, "
+                + "user.username, salary.rate from employeeData, user, salary "
+                + "where user.username = ? and employeeData.id=user.employee_id "
+                + "and salary.employee_id=user.employee_id");
+            ps.setString(1, u);
+            ResultSet rs = ps.executeQuery();
             
             while(rs.next()){
                 success = true;
@@ -163,8 +190,11 @@ public class Account {
         
         boolean exists = false;
         try {            
-            ResultSet rs = dba.read_db(String.format(
-                "select * from user where username=\'%s\';",u));
+            /*ResultSet rs = dba.read_db(String.format(
+                "select * from user where username=\'%s\';",u));*/
+            PreparedStatement ps = con.prepareStatement("select * from user where username = ?;");
+            ps.setString(1, u);
+            ResultSet rs = ps.executeQuery();
             
             if(rs.next()){
                 exists = true;
@@ -278,19 +308,36 @@ public class Account {
             Logger.getLogger(Account.class.getName()).log(Level.SEVERE, null, ex);
         }
         try {
-            if(dba.write_db(String.format(
-                   "INSERT INTO employeeData(id, first_name, last_name, title, "
+            PreparedStatement ps = con.prepareStatement("INSERT INTO "
+                    + "employeeData(id, first_name, last_name, title, "
                    + "address, phone, start_date, account_type) "
-                   + "VALUES('%d', '%s', '%s', '%s', '%s', "
-                   + "'%s', '%s', '1');"
-                   ,user_id,firstname,lastname,title,address,phone,startdate))) {
-               
-                if(dba.write_db(String.format(
-                   "INSERT INTO user(username, employee_id, pass_hash, salt) "
-                   + "VALUES('%s', '%s', '%s', '%s');"
-                   ,username,user_id,hs[0],hs[1]))){
-                    writeok = dba.write_db(String.format("INSERT INTO "
-                            + "salary(employee_id,rate) VALUES('%d','%f');",user_id,payrate));
+                   + "VALUES( ?, ?, ?, ?, ?, "
+                   + "?, ?, '1');");
+            ps.setInt(1, user_id);
+            ps.setString(2, firstname);
+            ps.setString(3, lastname);
+            ps.setString(4, title);
+            ps.setString(5, address);
+            ps.setString(6, phone);
+            ps.setString(7, startdate);
+            
+            if(ps.executeUpdate()>0) {
+                ps = con.prepareStatement("INSERT INTO user(username, "
+                        + "employee_id, pass_hash, salt) "
+                   + "VALUES(?, ?, ?, ?);");
+                ps.setString(1,username);
+                ps.setInt(2,user_id);
+                ps.setString(3,hs[0]);
+                ps.setString(4,hs[1]);
+                
+                if(ps.executeUpdate()>0){
+                    ps = con.prepareStatement("INSERT INTO "
+                            + "salary(employee_id,rate) VALUES( ?, ?);");
+                    ps.setInt(1, user_id);
+                    ps.setDouble(2,payrate);
+                    if(ps.executeUpdate()>0){
+                        writeok = true;
+                    }
                 }
 
             } else {
@@ -305,13 +352,25 @@ public class Account {
     public boolean modUser() {
         boolean writeok = false;
         try {
-            if(dba.write_db(String.format(
-                   "UPDATE employeeData first_name='%d', last_name='%s', title='%s', "
-                   + "address='%s', phone='%s', start_date='%s', account_type='%s' "
-                   + "where id='%d';"
-                   ,firstname,lastname,title,address,phone,startdate,user_id))){
-                dba.write_db(String.format("UPDATE salary rate='%f' "
-                        + "where id=\'%d\';",payrate));
+            PreparedStatement ps = con.prepareStatement("UPDATE employeeData "
+                    + "first_name = ?, last_name = ?, title = ?, "
+                   + "address = ?, phone = ?, start_date = ?, account_type = ? "
+                   + "where id = ?;");
+            ps.setString(1,firstname);
+            ps.setString(2,lastname);
+            ps.setString(3,title);
+            ps.setString(4,address);
+            ps.setString(5,phone);
+            ps.setString(6,startdate);
+            ps.setInt(7,acctype);
+            ps.setInt(8,user_id);
+            
+            if(ps.executeUpdate()>0){
+                ps = con.prepareStatement("UPDATE salary rate = ? "
+                        + "where id = ?;");
+                ps.setDouble(1, payrate);
+                ps.setInt(2, user_id);
+                ps.executeUpdate();
             }
         }catch(SQLException e){
             return writeok;
