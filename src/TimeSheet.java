@@ -10,12 +10,22 @@
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 public class TimeSheet extends javax.swing.JPanel {
-
+    
+    private TimeData td;
+    private int weeknro;
+    private DBAccess dba;
+    private Account acc;
+    
     /**
      * Creates new form TimeSheet
      */
-    public TimeSheet() {
+    public TimeSheet(DBAccess d, Account a) {
+        dba = d;
+        acc = a;
         initComponents();
+        td = new TimeData(dba, acc.getUserId());
+        weeknro = 1;
+        getTimeData();
     }
 
     /**
@@ -40,7 +50,6 @@ public class TimeSheet extends javax.swing.JPanel {
         jLabel5 = new javax.swing.JLabel();
         jLabel6 = new javax.swing.JLabel();
         jButton1 = new javax.swing.JButton();
-        jButton2 = new javax.swing.JButton();
 
         jLabel1.setText("Week:");
 
@@ -83,8 +92,6 @@ public class TimeSheet extends javax.swing.JPanel {
             }
         });
 
-        jButton2.setText("Cancel");
-
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -119,8 +126,6 @@ public class TimeSheet extends javax.swing.JPanel {
                 .addContainerGap(176, Short.MAX_VALUE))
             .add(layout.createSequentialGroup()
                 .add(jButton1)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(jButton2)
                 .add(0, 0, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
@@ -145,31 +150,107 @@ public class TimeSheet extends javax.swing.JPanel {
                     .add(thuField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                     .add(friField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                 .add(18, 18, 18)
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(jButton1)
-                    .add(jButton2))
-                .addContainerGap(144, Short.MAX_VALUE))
+                .add(jButton1)
+                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         // TODO add your handling code here:
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.WEEK_OF_YEAR, weeknro);
+        double hours = 0;
+        
+        hours = Double.parseDouble(monField.getText());
+        if(hours>=0){
+            cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
+            td.setDate(sdf.format(cal.getTime()));
+            td.setHours(hours);
+            td.setCoeff(1);
+            td.saveTimeData();
+        }
+        
+        hours = Double.parseDouble(tueField.getText());
+        if(hours>=0){
+            cal.set(Calendar.DAY_OF_WEEK, Calendar.TUESDAY);
+            td.setDate(sdf.format(cal.getTime()));
+            td.setHours(hours);
+            td.setCoeff(1);
+            td.saveTimeData();
+        }
+        
+        hours = Double.parseDouble(wedField.getText());
+        if(hours>=0){
+            cal.set(Calendar.DAY_OF_WEEK, Calendar.WEDNESDAY);
+            td.setDate(sdf.format(cal.getTime()));
+            td.setHours(hours);
+            td.setCoeff(1);
+            td.saveTimeData();
+        }
+        
+        hours = Double.parseDouble(thuField.getText());
+        if(hours>=0){
+            cal.set(Calendar.DAY_OF_WEEK, Calendar.THURSDAY);
+            td.setDate(sdf.format(cal.getTime()));
+            td.setHours(hours);
+            td.setCoeff(1);
+            td.saveTimeData();
+        }
+        
+        hours = Double.parseDouble(friField.getText());
+        if(hours>=0){
+            cal.set(Calendar.DAY_OF_WEEK, Calendar.FRIDAY);
+            td.setDate(sdf.format(cal.getTime()));
+            td.setHours(hours);
+            td.setCoeff(1);
+            td.saveTimeData();
+        }
+        
+        getTimeData();
+        
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void weekComboBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_weekComboBoxActionPerformed
         // TODO add your handling code here:
-        int week = weekComboBox.getSelectedIndex()+1;
+        weeknro = weekComboBox.getSelectedIndex()+1;
+        getTimeData();        
+    }//GEN-LAST:event_weekComboBoxActionPerformed
+    
+    private void getTimeData(){
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
         Calendar cal = Calendar.getInstance();
-        cal.set(Calendar.WEEK_OF_YEAR, week);        
+        cal.set(Calendar.WEEK_OF_YEAR, weeknro);        
+        
         cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
-        System.out.println(sdf.format(cal.getTime()));
-    }//GEN-LAST:event_weekComboBoxActionPerformed
-
+        td.setDate(sdf.format(cal.getTime()));
+        td.loadTimeData();
+        monField.setText(Double.toString(td.getHours()));
+        
+        cal.set(Calendar.DAY_OF_WEEK, Calendar.TUESDAY);
+        td.setDate(sdf.format(cal.getTime()));
+        td.loadTimeData();
+        tueField.setText(Double.toString(td.getHours()));
+        
+        cal.set(Calendar.DAY_OF_WEEK, Calendar.WEDNESDAY);
+        td.setDate(sdf.format(cal.getTime()));
+        td.loadTimeData();
+        wedField.setText(Double.toString(td.getHours()));
+        
+        cal.set(Calendar.DAY_OF_WEEK, Calendar.THURSDAY);
+        td.setDate(sdf.format(cal.getTime()));
+        td.loadTimeData();
+        thuField.setText(Double.toString(td.getHours()));
+        
+        cal.set(Calendar.DAY_OF_WEEK, Calendar.FRIDAY);
+        td.setDate(sdf.format(cal.getTime()));
+        td.loadTimeData();
+        friField.setText(Double.toString(td.getHours()));
+    }
+    
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTextField friField;
     private javax.swing.JButton jButton1;
-    private javax.swing.JButton jButton2;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;

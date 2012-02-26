@@ -27,6 +27,7 @@ public class Account {
     private String startdate;
     private double payrate;
     private int acctype;
+    private boolean active;
     
     private DBAccess dba;
     private Connection con;
@@ -52,10 +53,10 @@ public class Account {
         con = dba.getConnection();
     }
     
-    public Account(int uid, String uname, String pw, String fname, String lname,
+    public Account(DBAccess d, String pw, String fname, String lname,
             String t, String addr, String p, String start, double r, int atype) {
-        user_id = uid;
-        username = uname;
+        user_id = -1;
+        username = "";
         password = pw;
         
         firstname = fname;
@@ -67,7 +68,7 @@ public class Account {
         payrate = r;
         acctype = atype;
         
-        dba = new DBAccess();
+        dba = d;
         con = dba.getConnection();
     }
     
@@ -93,7 +94,6 @@ public class Account {
            return loadUserById(user_id);
         }
         else if (iv.validateString(username)) {
-           System.out.println("loaded user");
             return loadUserByUname(username);
         }
         else
@@ -192,7 +192,7 @@ public class Account {
         try {            
             /*ResultSet rs = dba.read_db(String.format(
                 "select * from user where username=\'%s\';",u));*/
-            PreparedStatement ps = con.prepareStatement("select * from user where username = ?;");
+            PreparedStatement ps = con.prepareStatement("select * from user where username = ?");
             ps.setString(1, u);
             ResultSet rs = ps.executeQuery();
             
@@ -293,6 +293,14 @@ public class Account {
         return acctype;
     }
     
+    public boolean isActive(){
+        return active;
+    }
+    
+    public void setActive(boolean a){
+        active = a;
+    }
+    
     public boolean addUser() {
         user_id = generateId();
         username = generateUname();
@@ -312,7 +320,7 @@ public class Account {
                     + "employeeData(id, first_name, last_name, title, "
                    + "address, phone, start_date, account_type) "
                    + "VALUES( ?, ?, ?, ?, ?, "
-                   + "?, ?, '1');");
+                   + "?, ?, ?)");
             ps.setInt(1, user_id);
             ps.setString(2, firstname);
             ps.setString(3, lastname);
@@ -320,11 +328,12 @@ public class Account {
             ps.setString(5, address);
             ps.setString(6, phone);
             ps.setString(7, startdate);
+            ps.setInt(8,acctype);
             
             if(ps.executeUpdate()>0) {
                 ps = con.prepareStatement("INSERT INTO user(username, "
                         + "employee_id, pass_hash, salt) "
-                   + "VALUES(?, ?, ?, ?);");
+                   + "VALUES(?, ?, ?, ?)");
                 ps.setString(1,username);
                 ps.setInt(2,user_id);
                 ps.setString(3,hs[0]);
@@ -332,7 +341,7 @@ public class Account {
                 
                 if(ps.executeUpdate()>0){
                     ps = con.prepareStatement("INSERT INTO "
-                            + "salary(employee_id,rate) VALUES( ?, ?);");
+                            + "salary(employee_id,rate) VALUES( ?, ?)");
                     ps.setInt(1, user_id);
                     ps.setDouble(2,payrate);
                     if(ps.executeUpdate()>0){
@@ -353,9 +362,9 @@ public class Account {
         boolean writeok = false;
         try {
             PreparedStatement ps = con.prepareStatement("UPDATE employeeData "
-                    + "first_name = ?, last_name = ?, title = ?, "
+                    + "SET first_name = ?, last_name = ?, title = ?, "
                    + "address = ?, phone = ?, start_date = ?, account_type = ? "
-                   + "where id = ?;");
+                   + "where id = ?");
             ps.setString(1,firstname);
             ps.setString(2,lastname);
             ps.setString(3,title);
@@ -366,8 +375,8 @@ public class Account {
             ps.setInt(8,user_id);
             
             if(ps.executeUpdate()>0){
-                ps = con.prepareStatement("UPDATE salary rate = ? "
-                        + "where id = ?;");
+                ps = con.prepareStatement("UPDATE salary SET rate = ? "
+                        + "where id = ?");
                 ps.setDouble(1, payrate);
                 ps.setInt(2, user_id);
                 ps.executeUpdate();
@@ -382,7 +391,7 @@ public class Account {
         int id = -1;
         
         try {            
-            ResultSet rs = dba.read_db("select max(id) from employeeData;");
+            ResultSet rs = dba.read_db("select max(id) from employeeData");
             while(rs.next()){
                 id = rs.getInt("max(id)");                
             }

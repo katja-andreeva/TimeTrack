@@ -8,6 +8,8 @@
  * @author katja
  */
 import java.sql.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
         
 public class TimeData {
     
@@ -17,14 +19,16 @@ public class TimeData {
     private double coeff;
     private DBAccess dba;
     private double rate;
+    private Connection con;
     
-    public TimeData(DBAccess d) {
-        user_id = -1;
+    public TimeData(DBAccess d, int id) {
+        user_id = id;
         dt = "";
         hours = 0;
         coeff = 0;
         rate = 0;
         dba = d;
+        con = dba.getConnection();
     }
     
     public void setDate(String d){
@@ -55,30 +59,69 @@ public class TimeData {
         return rate;
     }
     
-    public void saveTimeData(int uid) throws SQLException{
-        user_id = uid;
-        ResultSet rs = dba.read_db(String.format("SELECT rate from salary "
-                + "where employee_id='%d');", user_id));
-        while(rs.next()){
-               rate = rs.getDouble("rate");
+    public void saveTimeData(){
+        try {
+            PreparedStatement ps = con.prepareStatement("SELECT rate from salary "
+                    + "where employee_id = ?");
+            ps.setInt(1, user_id);
+            ResultSet rs = ps.executeQuery();
+            
+            while(rs.next()){
+                   rate = rs.getDouble("rate");
+            }
+            
+            ps = con.prepareStatement("SELECT * from timeUnit "
+                    + "where employee_id = ? and date = ?");
+            ps.setInt(1,user_id);
+            ps.setString(2, dt);
+            rs = ps.executeQuery();
+            
+            if(rs.next()){
+                ps = con.prepareStatement("UPDATE timeUnit "
+                        + "SET coeff = ?, hours = ?, rate = ? "
+                        + "where employee_id = ? and date = ?");
+                
+                ps.setDouble(1, coeff);
+                ps.setDouble(2, hours);
+                ps.setDouble(3, rate);
+                ps.setInt(4, user_id);
+                ps.setString(5, dt);
+            } else {
+                ps = con.prepareStatement("INSERT INTO "
+                        + "timeUnit(employee_id,coeff,hours, date, rate) "
+                        + "VALUES(?,?,?,?,?)");
+                ps.setInt(1, user_id);
+                ps.setDouble(2, coeff);
+                ps.setDouble(3, hours);
+                ps.setString(4, dt);
+                ps.setDouble(5, rate);
+            }
+            
+            ps.executeUpdate();
+        } catch (SQLException ex) {
+            Logger.getLogger(TimeData.class.getName()).log(Level.SEVERE, null, ex);
         }
-        dba.write_db(String.format("INSERT INTO "
-                + "timeUnit(employee_id,coeff,hours, date, rate) "
-                + "VALUES('%d','%f','%f');"
-                ,user_id, coeff, hours, dt, rate));
-        
-        
+               
     }
     
-    public void loadTimeData(int uid, String d) throws SQLException{
-        user_id = uid;
-        dt = d;
-        ResultSet rs = dba.read_db(String.format("SELECT coeff, hours, rate "
-                + "where employee_id='%d' and date='%s';",user_id, dt));
-        while(rs.next()){
-            coeff = rs.getDouble("coeff");
-            hours = rs.getDouble("hours");
-            rate = rs.getDouble("rate");
+    public void loadTimeData(){
+        coeff = 0;
+        hours = 0;
+        rate = 0;
+        try {
+            PreparedStatement ps = con.prepareStatement("SELECT coeff, hours, rate from timeUnit "
+                    + "where employee_id = ? and date = ?");
+            ps.setInt(1, user_id);
+            ps.setString(2, dt);
+            ResultSet rs = ps.executeQuery();
+
+            while(rs.next()){
+                coeff = rs.getDouble("coeff");
+                hours = rs.getDouble("hours");
+                rate = rs.getDouble("rate");
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(TimeData.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 }

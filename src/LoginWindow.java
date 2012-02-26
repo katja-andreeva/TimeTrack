@@ -1,3 +1,9 @@
+
+/**
+ *
+ * @author katja
+ */
+
 import java.awt.*;
 import java.awt.event.*;
 import java.security.NoSuchAlgorithmException;
@@ -45,11 +51,11 @@ public class LoginWindow implements ActionListener
     frame.getContentPane().add( top, BorderLayout.NORTH );
 
     JPanel buttons = new JPanel();
-    ok = new JButton( "Send" );
+    ok = new JButton( "Login" );
     ok.addActionListener( this );
     buttons.add( ok );
     
-    cancel = new JButton( "Cancel" );
+    cancel = new JButton( "Exit" );
     cancel.addActionListener( this );
     buttons.add( cancel );
     
@@ -57,6 +63,12 @@ public class LoginWindow implements ActionListener
     
     frame.pack();
     frame.setVisible( true );
+    frame.addWindowListener(new WindowAdapter() {
+        public void windowClosing(WindowEvent e){
+            dba.close();
+            System.exit(0);
+        }
+    });
   }
 
   public void actionPerformed( ActionEvent e )
@@ -74,7 +86,21 @@ public class LoginWindow implements ActionListener
                   }
                 else
                   {
-                    new AccountWindow(dba, username).setVisible(true);
+                    //new AccountWindow(dba, username).setVisible(true);
+                      
+                    JFrame userframe = new JFrame("Time Tracker");
+
+                    userframe.getContentPane().add(new UserWindow(dba, username), BorderLayout.CENTER);
+                    userframe.setSize(500, 500);
+                    userframe.setVisible(true);
+                    
+                    userframe.addWindowListener(new WindowAdapter() {
+                        public void windowClosing(WindowEvent e){
+                            dba.close();
+                            System.exit(0);
+                        }
+                    });
+        
                     frame.setVisible( false );
                   }
             } catch (SQLException ex) {
@@ -82,6 +108,9 @@ public class LoginWindow implements ActionListener
             } catch (NoSuchAlgorithmException ex) {
                 Logger.getLogger(LoginWindow.class.getName()).log(Level.SEVERE, null, ex);
             }
+        }else if (e.getSource() == cancel){
+            dba.close();
+            System.exit(0);
         }
     }
 }

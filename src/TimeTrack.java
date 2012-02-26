@@ -5,7 +5,7 @@
 
 /**
  *
- * @author toni
+ * @author katja
  */
 public class TimeTrack {
 

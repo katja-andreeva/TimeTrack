@@ -12,6 +12,7 @@ import java.io.*;
 import java.sql.*;
 import java.util.Properties;
 
+
 public class DBAccess {
      
     private String dbUrl = null;
@@ -20,22 +21,11 @@ public class DBAccess {
     
     private Connection dbconnection;
     private Statement stmt;
+    private static final String PROP_FILE="database.properties";
     
     public DBAccess(){
         
-        Properties prop = new Properties();
-        
-        try {
-               //load a properties file
-    		prop.load(new FileInputStream("database.properties"));
- 
-               //get the property value and print it out
-                dbUrl = prop.getProperty("db");
-    		dbuser = prop.getProperty("dbuser");
-    		dbpass = prop.getProperty("dbpass");
- 
-    	} catch (IOException ex) {
-        }
+        readPropertiesFile();
         
         try {
             dbconnection = DriverManager.getConnection( dbUrl, dbuser, dbpass );
@@ -102,4 +92,23 @@ public class DBAccess {
             System.err.println ("Error number: " + e.getErrorCode ());
         }
     }
+
+    
+    public void readPropertiesFile(){
+        try{
+                InputStream is = DBAccess.class.getResourceAsStream(PROP_FILE);
+                Properties prop = new Properties();
+                prop.load(is);
+                
+                dbUrl = prop.getProperty("db");
+    		dbuser = prop.getProperty("dbuser");
+    		dbpass = prop.getProperty("dbpass");
+                
+                is.close();
+            /* code to use values read from the file*/
+        }catch(Exception e){
+            System.out.println("Failed to read from " + PROP_FILE + " file.");
+        }
+    }
+
 }
